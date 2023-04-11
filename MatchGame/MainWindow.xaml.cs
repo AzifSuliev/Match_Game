@@ -16,32 +16,27 @@ using System.Windows.Shapes;
 
 namespace MatchGame
 {
+    using System.CodeDom.Compiler;
+    using System.Windows.Media.Converters;
     using System.Windows.Threading;
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        double[] results = new double[5];
+        int amountOfResults = 0;
         DispatcherTimer timer = new DispatcherTimer();
         int tenthsOfSecondsElapsed;
         int matchesFound;
         public MainWindow()
         {
-            InitializeComponent();
-            timer.Interval = TimeSpan.FromSeconds(.1);
-            timer.Tick += Timer_Tick;
-            SetUpGame();
-        }
-
-        private void Timer_Tick(object? sender, EventArgs e)
-        {
-            tenthsOfSecondsElapsed++;
-            timeTextBlock.Text = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
-            if (matchesFound == 8)
-            {
-                timer.Stop();
-                timeTextBlock.Text = timeTextBlock.Text + " - Play again?";
-            }
+            
+                InitializeComponent();
+                timer.Interval = TimeSpan.FromSeconds(.1);
+                timer.Tick += Timer_Tick;
+                SetUpGame();
         }
 
         private void SetUpGame()
@@ -56,22 +51,68 @@ namespace MatchGame
               "🦕", "🦕",
               "🦘", "🦘",
               "🦔", "🦔",
+              "🐷", "🐷",
+              "🐔", "🐔",
             };
             Random random = new Random();
-            foreach(TextBlock textBlock in mainGrid.Children.OfType<TextBlock>())
+
+            if (amountOfResults < results.Length)
             {
-                if (textBlock.Name != "timeTextBlock")
+                foreach (TextBlock textBlock in mainGrid.Children.OfType<TextBlock>())
                 {
-                    int index = random.Next(animalEmoji.Count);
-                    string nextEmoji = animalEmoji[index];
-                    textBlock.Text = nextEmoji;
-                    animalEmoji.RemoveAt(index);
+                    if (textBlock.Name != "timeTextBlock")
+                    {
+                        textBlock.Visibility = Visibility.Visible;
+                        int index = random.Next(animalEmoji.Count);
+                        string nextEmoji = animalEmoji[index];
+                        textBlock.Text = nextEmoji;
+                        animalEmoji.RemoveAt(index);
+
+                    }
                 }
+                timer.Start();
+                tenthsOfSecondsElapsed = 0;
+                matchesFound = 0;
             }
-            timer.Start();
-            tenthsOfSecondsElapsed = 0;
-            matchesFound = 0;
+            else timeTextBlock.Text = "Finish";
         }
+
+        private void Timer_Tick(object? sender, EventArgs e)
+        {
+           
+                tenthsOfSecondsElapsed++;
+                timeTextBlock.Text = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
+                if (matchesFound == 10)
+                {
+                    timer.Stop();
+                   
+                timeTextBlock.Text = $"{timeTextBlock.Text} The best result is " +
+                    $"{FindingTheBestResult(tenthsOfSecondsElapsed / 10F).ToString("0.0s")} - Play again?";
+                }
+                 
+        }
+
+        public double FindingTheBestResult(double res)
+        {
+            double bestResult;
+            if (amountOfResults < results.Length)
+            {
+                results[amountOfResults] = res;
+                amountOfResults++;
+            }
+                double[] arr = new double[amountOfResults];
+                for (int i = 0; i < amountOfResults; i++)
+                {
+                    arr[i] = results[i];
+                }
+                bestResult = arr[0];
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    if (arr[i] < bestResult) bestResult = arr[i];
+                }
+
+                return bestResult;
+            }
 
         TextBlock lastTextBlockClicked = new TextBlock();
         bool findingMatch = false;
@@ -103,7 +144,7 @@ namespace MatchGame
 
         private void TimeTextBlock_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (matchesFound == 8)
+            if (matchesFound == 10)
             {
                 SetUpGame();
             }
